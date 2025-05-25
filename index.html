@@ -48,15 +48,6 @@
             align-items: center;
         }
         
-        .header-content {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
         .logo {
             display: flex;
             align-items: center;
@@ -885,222 +876,216 @@
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Image enhancement variables
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            const preview = document.getElementById('preview');
-            const enhanceBtn = document.getElementById('enhanceBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const loading = document.getElementById('loading');
-            const errorContainer = document.getElementById('errorContainer');
-            const errorMessage = document.getElementById('errorMessage');
-            const attemptsCounter = document.getElementById('attemptsCounter');
-            const retryBtn = document.getElementById('retryBtn');
-            const resultContainer = document.getElementById('resultContainer');
-            const originalImg = document.getElementById('originalImg');
-            const enhancedImg = document.getElementById('enhancedImg');
-            const downloadBtn = document.getElementById('downloadBtn');
+        // ADMIN PANEL FUNCTIONALITY
+        const adminBtn = document.getElementById('adminBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        const closeAdmin = document.getElementById('closeAdmin');
+        const adminKeyInput = document.getElementById('adminKeyInput');
+        const verifyKeyBtn = document.getElementById('verifyKeyBtn');
+        const keyStatus = document.getElementById('keyStatus');
+        const apiStatusIndicator = document.getElementById('apiStatusIndicator');
+        const apiStatusText = document.getElementById('apiStatusText');
+        const apiList = document.getElementById('apiList');
+        const newApiInput = document.getElementById('newApiInput');
+        const addApiBtn = document.getElementById('addApiBtn');
+        
+        // Image enhancement variables
+        let currentApi = 'https://imageapixdark.onrender.com';
+        let apis = [currentApi]; // Start with default API
+        let isAdmin = false;
+        
+        // Admin panel toggle
+        adminBtn.addEventListener('click', () => {
+            adminPanel.classList.add('active');
+            checkApiStatus();
+        });
+        
+        closeAdmin.addEventListener('click', () => {
+            adminPanel.classList.remove('active');
+        });
+        
+        // Key verification
+        verifyKeyBtn.addEventListener('click', () => {
+            const enteredKey = adminKeyInput.value.trim();
+            const correctKey = "RUDRAPAWAR";
             
-            let selectedFile = null;
-            let enhancedImageUrl = null;
-            let attemptCount = 0;
-            const maxAttempts = 3;
-            
-            // Admin panel variables
-            const adminBtn = document.getElementById('adminBtn');
-            const adminPanel = document.getElementById('adminPanel');
-            const closeAdmin = document.getElementById('closeAdmin');
-            const adminKeyInput = document.getElementById('adminKeyInput');
-            const verifyKeyBtn = document.getElementById('verifyKeyBtn');
-            const keyStatus = document.getElementById('keyStatus');
-            const apiStatusIndicator = document.getElementById('apiStatusIndicator');
-            const apiStatusText = document.getElementById('apiStatusText');
-            const apiList = document.getElementById('apiList');
-            const newApiInput = document.getElementById('newApiInput');
-            const addApiBtn = document.getElementById('addApiBtn');
-            
-            // API management
-            let currentApi = 'https://imageapixdark.onrender.com';
-            let apis = [currentApi]; // Start with default API
-            let isAdmin = false;
-            
-            // Initialize the app
-            function init() {
-                // Check if there are saved APIs in localStorage
-                const savedAPIs = localStorage.getItem('imageEnhancerAPIs');
-                if (savedAPIs) {
-                    apis = JSON.parse(savedAPIs);
-                    currentApi = apis[0] || currentApi;
+            if (enteredKey === correctKey) {
+                isAdmin = true;
+                keyStatus.textContent = "✓ Access Granted!";
+                keyStatus.style.color = "#20c997";
+                keyStatus.style.display = "block";
+                
+                // Load saved APIs from localStorage
+                try {
+                    const savedAPIs = localStorage.getItem('imageEnhancerAPIs');
+                    if (savedAPIs) {
+                        apis = JSON.parse(savedAPIs);
+                        currentApi = apis[0] || currentApi;
+                        renderApiList();
+                    }
+                } catch (e) {
+                    console.error("Error loading APIs:", e);
                 }
                 
-                // Check API status
-                checkApiStatus();
-                
-                // Set up event listeners
-                setupEventListeners();
+            } else {
+                keyStatus.textContent = "✗ Invalid Key!";
+                keyStatus.style.color = "#ff4757";
+                keyStatus.style.display = "block";
             }
+        });
+        
+        // API Management
+        function renderApiList() {
+            apiList.innerHTML = '';
+            apis.forEach((api, index) => {
+                const apiItem = document.createElement('div');
+                apiItem.className = 'api-item';
+                apiItem.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <span class="api-url">${api}</span>
+                        <div class="${api === currentApi ? 'api-active' : 'api-inactive'}"></div>
+                    </div>
+                    <div class="api-actions">
+                        <button class="api-action-btn set-api-btn" data-api="${api}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="api-action-btn delete-api-btn" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                apiList.appendChild(apiItem);
+            });
             
-            // Set up all event listeners
-            function setupEventListeners() {
-                // Admin panel toggle
-                adminBtn.addEventListener('click', () => {
-                    adminPanel.classList.add('active');
+            // Add event listeners to new buttons
+            document.querySelectorAll('.set-api-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    currentApi = e.target.closest('button').dataset.api;
+                    renderApiList();
+                    checkApiStatus();
                 });
-                
-                closeAdmin.addEventListener('click', () => {
-                    adminPanel.classList.remove('active');
-                });
-                
-                // Key verification
-                verifyKeyBtn.addEventListener('click', () => {
-                    const enteredKey = adminKeyInput.value.trim();
-                    const correctKey = "RUDRAPAWAR";
-                    
-                    if (enteredKey === correctKey) {
-                        isAdmin = true;
-                        keyStatus.textContent = "✓ Access Granted!";
-                        keyStatus.style.color = "var(--success)";
-                        keyStatus.style.display = "block";
-                        
-                        // Load saved APIs from localStorage
-                        const savedAPIs = localStorage.getItem('imageEnhancerAPIs');
-                        if (savedAPIs) {
-                            apis = JSON.parse(savedAPIs);
-                            currentApi = apis[0] || currentApi;
-                            renderApiList();
-                        }
-                        
-                    } else {
-                        keyStatus.textContent = "✗ Invalid Key!";
-                        keyStatus.style.color = "var(--danger)";
-                        keyStatus.style.display = "block";
-                    }
-                });
-                
-                // API Management
-                addApiBtn.addEventListener('click', () => {
+            });
+            
+            document.querySelectorAll('.delete-api-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
                     if (!isAdmin) {
                         alert('Admin access required');
                         return;
                     }
                     
-                    const newApi = newApiInput.value.trim();
-                    if (newApi && !apis.includes(newApi)) {
-                        // Basic URL validation
-                        if (!newApi.startsWith('http://') && !newApi.startsWith('https://')) {
-                            alert('Please enter a valid URL starting with http:// or https://');
-                            return;
-                        }
-                        
-                        apis.unshift(newApi); // Add to beginning of array
-                        currentApi = newApi;
-                        localStorage.setItem('imageEnhancerAPIs', JSON.stringify(apis));
-                        newApiInput.value = '';
-                        renderApiList();
-                        checkApiStatus();
+                    const index = parseInt(e.target.closest('button').dataset.index);
+                    apis.splice(index, 1);
+                    if (currentApi === apis[index]) {
+                        currentApi = apis[0] || '';
                     }
+                    localStorage.setItem('imageEnhancerAPIs', JSON.stringify(apis));
+                    renderApiList();
+                    checkApiStatus();
                 });
-                
-                // Handle click on upload area
-                uploadArea.addEventListener('click', function() {
-                    fileInput.click();
-                });
-                
-                // Handle drag and drop
-                uploadArea.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    uploadArea.classList.add('active');
-                });
-                
-                uploadArea.addEventListener('dragleave', function() {
-                    uploadArea.classList.remove('active');
-                });
-                
-                uploadArea.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    uploadArea.classList.remove('active');
-                    
-                    if (e.dataTransfer.files.length) {
-                        handleFile(e.dataTransfer.files[0]);
-                    }
-                });
-                
-                // Handle file selection
-                fileInput.addEventListener('change', function() {
-                    if (fileInput.files.length) {
-                        handleFile(fileInput.files[0]);
-                    }
-                });
-                
-                // Handle reset button
-                resetBtn.addEventListener('click', function() {
-                    resetTool();
-                });
-                
-                // Handle retry button
-                retryBtn.addEventListener('click', function() {
-                    if (selectedFile) {
-                        enhanceImage();
-                    } else {
-                        showError('Please select an image first');
-                    }
-                });
-                
-                // Handle enhance button click
-                enhanceBtn.addEventListener('click', function() {
-                    if (!selectedFile) {
-                        showError('Please select an image first');
-                        return;
-                    }
-                    
-                    enhanceImage();
-                });
+            });
+        }
+        
+        // Add new API
+        addApiBtn.addEventListener('click', () => {
+            if (!isAdmin) {
+                alert('Admin access required');
+                return;
             }
             
-            // Handle file selection
-            function handleFile(file) {
-                // Check if file is an image
-                if (!file.type.match('image.*')) {
-                    showError('Please select a valid image file (JPEG, PNG, WEBP)');
+            const newApi = newApiInput.value.trim();
+            if (newApi && !apis.includes(newApi)) {
+                // Basic URL validation
+                if (!newApi.startsWith('http://') && !newApi.startsWith('https://')) {
+                    alert('Please enter a valid URL starting with http:// or https://');
                     return;
                 }
                 
-                // Check file size (limit to 15MB)
-                if (file.size > 15 * 1024 * 1024) {
-                    showError('File size should be less than 15MB for optimal processing');
-                    return;
-                }
+                apis.unshift(newApi); // Add to beginning of array
+                currentApi = newApi;
+                localStorage.setItem('imageEnhancerAPIs', JSON.stringify(apis));
+                newApiInput.value = '';
+                renderApiList();
+                checkApiStatus();
+            }
+        });
+        
+        // Check API status
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(currentApi, {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
                 
-                selectedFile = file;
-                errorContainer.style.display = 'none';
-                attemptCount = 0; // Reset attempt counter
-                
-                // Show preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    originalImg.src = e.target.result;
-                    enhanceBtn.disabled = false;
-                    
-                    // Hide result container if it was shown
-                    resultContainer.style.display = 'none';
-                    
-                    // Clear previous enhanced image if any
-                    if (enhancedImageUrl) {
-                        URL.revokeObjectURL(enhancedImageUrl);
-                        enhancedImageUrl = null;
-                    }
-                };
-                reader.readAsDataURL(file);
+                apiStatusIndicator.classList.add('active');
+                apiStatusText.textContent = `API is online (${currentApi})`;
+            } catch (error) {
+                apiStatusIndicator.classList.remove('active');
+                apiStatusText.textContent = `API is offline (${currentApi})`;
+            }
+        }
+        
+        // Initialize admin panel
+        renderApiList();
+        
+        // IMAGE ENHANCEMENT FUNCTIONALITY
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const retryBtn = document.getElementById('retryBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const originalImg = document.getElementById('originalImg');
+        const enhancedImg = document.getElementById('enhancedImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        let selectedFile = null;
+        let enhancedImageUrl = null;
+        let attemptCount = 0;
+        const maxAttempts = 3;
+        
+        // Handle click on upload area
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('active');
+        });
+        
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.classList.remove('active');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('active');
+            
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            // Check if file is an image
+            if (!file.type.match('image.*')) {
+                showError('Please select a valid image file (JPEG, PNG, WEBP)');
+                return;
             }
             
-            // Reset the tool to initial state
-            function resetTool() {
-                fileInput.value = '';
-                preview.src = '';
-                preview.style.display = 'none';
-                enhanceBtn.disabled = true;
-                resultContainer.style.display = 'none';
-                errorContainer.style.display = 'none';
+            // Check file size (limit to 15MB)
+            if (file.size > 15 * 1024 * 1024) {
+                showError('File size
